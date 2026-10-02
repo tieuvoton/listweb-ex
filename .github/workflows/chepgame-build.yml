@@ -65,7 +65,7 @@ jobs:
           test -s prospero/build/ProsperoMgr.elf
           test -s prospero/build/CHEPGAME_NET_PS5_Manager.elf
           file prospero/build/CHEPGAME_NET_PS5_Manager.elf
-          sha256sum -c prospero/build/CHEPGAME_NET_PS5_Manager.elf.sha256
+          (cd prospero && sha256sum -c build/CHEPGAME_NET_PS5_Manager.elf.sha256)
           ls -lh prospero/build/ProsperoMgr.elf prospero/build/CHEPGAME_NET_PS5_Manager.elf
           cat prospero/build/CHEPGAME_NET_PS5_Manager.elf.sha256
 
