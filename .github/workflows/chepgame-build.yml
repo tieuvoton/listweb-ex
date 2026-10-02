@@ -1,4 +1,4 @@
-# CHEPGAME.NET build workspace
+# CHEPGAME.NET build workspace - llvm18 fix
 name: Build CHEPGAME.NET PS5 Manager ELF
 
 on:
