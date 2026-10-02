@@ -1,3 +1,4 @@
+# CHEPGAME.NET build workspace - trigger after overlay upload
 name: Build CHEPGAME.NET PS5 Manager ELF
 
 on:
