@@ -48,7 +48,29 @@ jobs:
           chmod +x prospero/build_chepgame_docker.sh prospero/docker_inside_build.sh prospero/build_deps_docker.sh prospero/build_chepgame.sh
           test -f prospero/source/frontend/src/locales/vi-VN.json
           test -f prospero/Dockerfile.sdk
-          echo "CHEPGAME overlay applied."
+
+          # Match itsPLK/ps5-webkit-autoloader exactly here: build/install
+          # the PS5 Payload SDK from source instead of using the binary ZIP.
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("prospero/Dockerfile.sdk")
+          s = p.read_text()
+          start = s.index("# Official binary SDK release.")
+          end = s.index("ENV PS5_PAYLOAD_SDK=", start)
+          replacement = """# Build and install PS5 Payload SDK from source, matching itsPLK.
+WORKDIR /opt
+RUN git clone --depth 1 --branch v0.43 https://github.com/ps5-payload-dev/sdk.git ps5-payload-sdk-source && \\
+    cd /opt/ps5-payload-sdk-source && \\
+    make DESTDIR=/opt/ps5-payload-sdk install && \\
+    test -f /opt/ps5-payload-sdk/toolchain/prospero.mk && \\
+    test -x /opt/ps5-payload-sdk/bin/prospero-clang
+
+"""
+          p.write_text(s[:start] + replacement + s[end:])
+          PY
+
+          echo "CHEPGAME overlay applied; SDK source-build patch enabled."
+          grep -n "ps5-payload-sdk-source" prospero/Dockerfile.sdk
 
       - name: Build PS5 ELF in isolated SDK container
         shell: bash
