@@ -1,4 +1,4 @@
-# CHEPGAME.NET build workspace - trigger after overlay upload
+# CHEPGAME.NET build workspace
 name: Build CHEPGAME.NET PS5 Manager ELF
 
 on:
@@ -8,6 +8,7 @@ on:
     paths:
       - ".github/workflows/chepgame-build.yml"
       - "chepgame-build/min.part*"
+      - "chepgame-build/Dockerfile.sdk.fixed"
   workflow_dispatch:
 
 permissions:
@@ -28,9 +29,7 @@ jobs:
           set -euo pipefail
           cat chepgame-build/min.part00 chepgame-build/min.part01 chepgame-build/min.part02 | base64 -d > /tmp/chepgame-min.tar.gz
           gzip -t /tmp/chepgame-min.tar.gz
-          echo "Overlay SHA256:"
           sha256sum /tmp/chepgame-min.tar.gz
-          echo "Overlay files:"
           tar -tzf /tmp/chepgame-min.tar.gz
 
       - name: Clone upstream ProsperoMgr
@@ -45,32 +44,12 @@ jobs:
         run: |
           set -euo pipefail
           tar -xzf /tmp/chepgame-min.tar.gz -C prospero
+          cp chepgame-build/Dockerfile.sdk.fixed prospero/Dockerfile.sdk
           chmod +x prospero/build_chepgame_docker.sh prospero/docker_inside_build.sh prospero/build_deps_docker.sh prospero/build_chepgame.sh
           test -f prospero/source/frontend/src/locales/vi-VN.json
           test -f prospero/Dockerfile.sdk
-
-          # Match itsPLK/ps5-webkit-autoloader exactly here: build/install
-          # the PS5 Payload SDK from source instead of using the binary ZIP.
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path("prospero/Dockerfile.sdk")
-          s = p.read_text()
-          start = s.index("# Official binary SDK release.")
-          end = s.index("ENV PS5_PAYLOAD_SDK=", start)
-          replacement = """# Build and install PS5 Payload SDK from source, matching itsPLK.
-WORKDIR /opt
-RUN git clone --depth 1 --branch v0.43 https://github.com/ps5-payload-dev/sdk.git ps5-payload-sdk-source && \\
-    cd /opt/ps5-payload-sdk-source && \\
-    make DESTDIR=/opt/ps5-payload-sdk install && \\
-    test -f /opt/ps5-payload-sdk/toolchain/prospero.mk && \\
-    test -x /opt/ps5-payload-sdk/bin/prospero-clang
-
-"""
-          p.write_text(s[:start] + replacement + s[end:])
-          PY
-
-          echo "CHEPGAME overlay applied; SDK source-build patch enabled."
           grep -n "ps5-payload-sdk-source" prospero/Dockerfile.sdk
+          echo "CHEPGAME overlay applied; source-built SDK Dockerfile enabled."
 
       - name: Build PS5 ELF in isolated SDK container
         shell: bash
