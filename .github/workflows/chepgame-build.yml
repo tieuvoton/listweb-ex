@@ -45,7 +45,7 @@ jobs:
           set -euo pipefail
           tar -xzf /tmp/chepgame-min.tar.gz -C prospero
           cp chepgame-build/Dockerfile.sdk.fixed prospero/Dockerfile.sdk
-          chmod +x prospero/build_chepgame_docker.sh prospero/docker_inside_build.sh prospero/build_deps_docker.sh prospero/build_chepgame.sh
+          chmod +x prospero/build.sh prospero/build_chepgame_docker.sh prospero/docker_inside_build.sh prospero/build_deps_docker.sh prospero/build_chepgame.sh
           test -f prospero/source/frontend/src/locales/vi-VN.json
           test -f prospero/Dockerfile.sdk
           grep -n "ps5-payload-sdk-source" prospero/Dockerfile.sdk
