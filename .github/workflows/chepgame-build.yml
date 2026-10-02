@@ -1,0 +1,79 @@
+name: Build CHEPGAME.NET PS5 Manager ELF
+
+on:
+  push:
+    branches:
+      - chepgame-build
+    paths:
+      - ".github/workflows/chepgame-build.yml"
+      - "chepgame-build/min.part*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout build workspace
+        uses: actions/checkout@v4
+
+      - name: Reconstruct CHEPGAME.NET overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat chepgame-build/min.part00 chepgame-build/min.part01 chepgame-build/min.part02 | base64 -d > /tmp/chepgame-min.tar.gz
+          gzip -t /tmp/chepgame-min.tar.gz
+          echo "Overlay SHA256:"
+          sha256sum /tmp/chepgame-min.tar.gz
+          echo "Overlay files:"
+          tar -tzf /tmp/chepgame-min.tar.gz
+
+      - name: Clone upstream ProsperoMgr
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 https://github.com/notmaj0r/ProsperoMgr.git prospero
+          git -C prospero rev-parse HEAD
+
+      - name: Apply CHEPGAME.NET Vietnamese overlay
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -xzf /tmp/chepgame-min.tar.gz -C prospero
+          chmod +x prospero/build_chepgame_docker.sh prospero/docker_inside_build.sh prospero/build_deps_docker.sh prospero/build_chepgame.sh
+          test -f prospero/source/frontend/src/locales/vi-VN.json
+          test -f prospero/Dockerfile.sdk
+          echo "CHEPGAME overlay applied."
+
+      - name: Build PS5 ELF in isolated SDK container
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd prospero
+          ./build_chepgame_docker.sh
+
+      - name: Verify ELF and checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s prospero/build/ProsperoMgr.elf
+          test -s prospero/build/CHEPGAME_NET_PS5_Manager.elf
+          file prospero/build/CHEPGAME_NET_PS5_Manager.elf
+          sha256sum -c prospero/build/CHEPGAME_NET_PS5_Manager.elf.sha256
+          ls -lh prospero/build/ProsperoMgr.elf prospero/build/CHEPGAME_NET_PS5_Manager.elf
+          cat prospero/build/CHEPGAME_NET_PS5_Manager.elf.sha256
+
+      - name: Upload CHEPGAME.NET ELF
+        uses: actions/upload-artifact@v4
+        with:
+          name: CHEPGAME_NET_PS5_Manager
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            prospero/build/CHEPGAME_NET_PS5_Manager.elf
+            prospero/build/CHEPGAME_NET_PS5_Manager.elf.sha256
+            prospero/build/ProsperoMgr.elf
