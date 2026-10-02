@@ -51,6 +51,12 @@ RUN git clone --depth 1 --branch "v${PS5_SDK_VERSION}" https://github.com/ps5-pa
 ENV PS5_PAYLOAD_SDK=/opt/ps5-payload-sdk
 ENV PATH=/opt/ps5-payload-sdk/bin:/usr/local/bin:/usr/bin:/bin
 
+# Install libc++/libc++abi/libunwind into the PS5 sysroot.
+# This is the same step used by the official ps5-payload-dev/sdk CI for C++ samples.
+RUN PS5_PAYLOAD_SDK=/opt/ps5-payload-sdk bash /opt/ps5-payload-sdk-source/libcxx.sh && \
+    test -f /opt/ps5-payload-sdk/target/include/c++/v1/vector && \
+    test -f /opt/ps5-payload-sdk/target/include/c++/v1/filesystem
+
 WORKDIR /opt
 COPY build_deps_docker.sh /opt/build_deps_docker.sh
 RUN chmod +x /opt/build_deps_docker.sh && /opt/build_deps_docker.sh
