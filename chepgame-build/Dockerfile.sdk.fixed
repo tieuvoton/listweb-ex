@@ -26,7 +26,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 RUN ln -sf /usr/bin/clang-18 /usr/local/bin/clang && \
+    ln -sf /usr/bin/clang-18 /usr/local/bin/cc && \
     ln -sf /usr/bin/clang++-18 /usr/local/bin/clang++ && \
+    ln -sf /usr/bin/clang++-18 /usr/local/bin/c++ && \
     ln -sf /usr/bin/ld.lld-18 /usr/local/bin/ld.lld
 
 RUN set -eux; \
